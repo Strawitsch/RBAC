@@ -70,4 +70,7 @@ public class Role {
         }
         return sb.toString();
     }
+
+    public String getId() { return id; }
+    public String getName() { return name; }
 }
