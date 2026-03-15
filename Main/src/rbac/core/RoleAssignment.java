@@ -1,3 +1,5 @@
+package rbac.core;
+
 public interface RoleAssignment {
     String assignmentId();
     User user();

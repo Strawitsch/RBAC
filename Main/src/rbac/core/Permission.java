@@ -1,3 +1,5 @@
+package rbac.core;
+
 public record Permission(String name, String resource, String description) {
 
     public Permission(String name, String resource, String description){
@@ -6,7 +8,7 @@ public record Permission(String name, String resource, String description) {
         if(description.isBlank()) throw new IllegalArgumentException("description cannot be empty");
 
         if (name.contains(" ")) {
-            throw new IllegalArgumentException("Permission name must not contain spaces");
+            throw new IllegalArgumentException("rbac.core.Permission name must not contain spaces");
         }
 
         this.name = name.toUpperCase();

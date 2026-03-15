@@ -1,5 +1,8 @@
+package rbac.core;
+
 import java.util.Objects;
 import java.util.UUID;
+package rbac.core;
 
 public abstract class AbstractRoleAssignment implements RoleAssignment {
     String assignmentId;
@@ -10,7 +13,7 @@ public abstract class AbstractRoleAssignment implements RoleAssignment {
     public AbstractRoleAssignment(User user, Role role, AssignmentMetadata metadata){
         this.assignmentId = "asgn_" + UUID.randomUUID().toString().substring(0,8);
         this.user = Objects.requireNonNull(user, "User cannot be null");
-        this.role = Objects.requireNonNull(role, "Role cannot be null");
+        this.role = Objects.requireNonNull(role, "rbac.core.Role cannot be null");
         this.metadata = Objects.requireNonNull(metadata, "Metadata cannot be null");
     }
 

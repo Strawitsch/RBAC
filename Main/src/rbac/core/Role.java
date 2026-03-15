@@ -1,3 +1,5 @@
+package rbac.core;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -56,12 +58,12 @@ public class Role {
 
     @Override
     public String toString() {
-        return "Role{id='" + id + "', name='" + name + "'}";
+        return "rbac.core.Role{id='" + id + "', name='" + name + "'}";
     }
 
     public String format() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Role: %s [ID: %s]\n", name, id));
+        sb.append(String.format("rbac.core.Role: %s [ID: %s]\n", name, id));
         sb.append(String.format("Description: %s\n", description));
         sb.append(String.format("Permissions (%d):\n", permissions.size()));
 
