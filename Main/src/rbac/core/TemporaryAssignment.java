@@ -53,4 +53,8 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
                 autoRenew,
                 getTimeRemaining());
     }
+
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
 }
