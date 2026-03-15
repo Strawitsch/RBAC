@@ -1,7 +1,5 @@
 package rbac.filters;
 
-import rbac.core.User;
-
 public final class UserFilters {
     private UserFilters() {}
 

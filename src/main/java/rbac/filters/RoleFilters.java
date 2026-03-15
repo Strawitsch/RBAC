@@ -1,7 +1,6 @@
 package rbac.filters;
 
 import rbac.core.Permission;
-import rbac.core.Role;
 
 public final class RoleFilters {
     private RoleFilters() {}
