@@ -2,7 +2,6 @@ package rbac.core;
 
 import java.util.Objects;
 import java.util.UUID;
-package rbac.core;
 
 public abstract class AbstractRoleAssignment implements RoleAssignment {
     String assignmentId;
