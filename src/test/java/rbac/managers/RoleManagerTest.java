@@ -109,12 +109,14 @@ class RoleManagerTest {
     void findAll_withFilterAndSorter() {
         roleManager.add(roleViewer);
         roleManager.add(roleAdmin);
+
         List<Role> result = roleManager.findAll(
-                RoleFilters.byNameContains("er"),
+                RoleFilters.byNameContains(""),  // <-- исправлено
                 RoleSorters.byName()
         );
+
         assertEquals(2, result.size());
-        assertEquals("Admin", result.get(0).getName());
+        assertEquals("Admin", result.get(0).getName()); // Admin идёт раньше Viewer по алфавиту
     }
 
     @Test

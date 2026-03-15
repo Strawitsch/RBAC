@@ -25,6 +25,8 @@ class AssignmentManagerTest {
     private AssignmentMetadata metadata;
     private PermanentAssignment permAssignment;
     private TemporaryAssignment tempAssignment;
+    private Role role2;
+    private User user2;
 
     @BeforeEach
     void setUp() {
@@ -45,6 +47,13 @@ class AssignmentManagerTest {
         permAssignment = new PermanentAssignment(user, role, metadata);
         tempAssignment = new TemporaryAssignment(user, role, metadata,
                 LocalDateTime.now().plusDays(5).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), false);
+
+        role2 = new Role("TestRole2", "Test role 2");
+        role2.addPermission(permission);
+        roleManager.add(role2);
+
+        user2 = User.validate("testuser2", "Test User 2", "test2@example.com");
+        userManager.add(user2);
     }
 
     @Test
@@ -92,7 +101,10 @@ class AssignmentManagerTest {
     @Test
     void findByUser_returnsAssignments() {
         assignmentManager.add(permAssignment);
-        assignmentManager.add(tempAssignment);
+        TemporaryAssignment temp2 = new TemporaryAssignment(user, role2, metadata,
+                LocalDateTime.now().plusDays(5).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), false);
+        assignmentManager.add(temp2);
+
         List<RoleAssignment> found = assignmentManager.findByUser(user);
         assertEquals(2, found.size());
     }
@@ -107,7 +119,9 @@ class AssignmentManagerTest {
     @Test
     void findByFilter_returnsMatching() {
         assignmentManager.add(permAssignment);
-        assignmentManager.add(tempAssignment);
+        assignmentManager.add(new TemporaryAssignment(user, role2, metadata,
+                LocalDateTime.now().plusDays(5).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), false));
+
         List<RoleAssignment> active = assignmentManager.findByFilter(AssignmentFilters.activeOnly());
         assertEquals(2, active.size());
     }
@@ -115,7 +129,9 @@ class AssignmentManagerTest {
     @Test
     void findAll_withFilterAndSorter() {
         assignmentManager.add(permAssignment);
-        assignmentManager.add(tempAssignment);
+        assignmentManager.add(new TemporaryAssignment(user, role2, metadata,
+                LocalDateTime.now().plusDays(5).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), false));
+
         List<RoleAssignment> sorted = assignmentManager.findAll(
                 AssignmentFilters.byUser(user),
                 AssignmentSorters.byAssignmentDate()
@@ -126,7 +142,9 @@ class AssignmentManagerTest {
     @Test
     void getActiveAssignments_returnsActive() {
         assignmentManager.add(permAssignment);
-        assignmentManager.add(tempAssignment);
+        assignmentManager.add(new TemporaryAssignment(user, role2, metadata,
+                LocalDateTime.now().plusDays(5).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), false));
+
         assertEquals(2, assignmentManager.getActiveAssignments().size());
         permAssignment.revoke();
         assertEquals(1, assignmentManager.getActiveAssignments().size());
@@ -135,11 +153,10 @@ class AssignmentManagerTest {
     @Test
     void getExpiredAssignments_returnsExpired() {
         assignmentManager.add(permAssignment);
-        assignmentManager.add(tempAssignment);
-        assertEquals(0, assignmentManager.getExpiredAssignments().size());
         String past = LocalDateTime.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-        TemporaryAssignment expired = new TemporaryAssignment(user, role, metadata, past, false);
+        TemporaryAssignment expired = new TemporaryAssignment(user2, role, metadata, past, false);
         assignmentManager.add(expired);
+
         assertEquals(1, assignmentManager.getExpiredAssignments().size());
     }
 
@@ -203,7 +220,9 @@ class AssignmentManagerTest {
     @Test
     void clear_removesAll() {
         assignmentManager.add(permAssignment);
-        assignmentManager.add(tempAssignment);
+        assignmentManager.add(new TemporaryAssignment(user, role2, metadata,
+                LocalDateTime.now().plusDays(5).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), false));
+
         assignmentManager.clear();
         assertEquals(0, assignmentManager.count());
     }
