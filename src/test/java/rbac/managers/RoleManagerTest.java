@@ -11,6 +11,7 @@ import rbac.exceptions.RoleInUseException;
 import rbac.exceptions.RoleNotFoundException;
 import rbac.filters.RoleFilters;
 import rbac.sorters.RoleSorters;
+import rbac.core.RoleAssignment;
 
 import java.util.List;
 import java.util.Optional;
