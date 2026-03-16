@@ -44,6 +44,28 @@ public class RoleManager implements Repository<Role> {
         return removed;
     }
 
+    public void updateRole(String oldName, String newName, String newDescription) {
+        Role role = rolesByName.get(oldName);
+        if (role == null) {
+            throw new RoleNotFoundException("Role " + oldName + " not found");
+        }
+
+        if (!oldName.equals(newName) && rolesByName.containsKey(newName)) {
+            throw new DuplicateRoleException("Role with name " + newName + " already exists");
+        }
+
+        if (!oldName.equals(newName)) {
+            rolesByName.remove(oldName);
+        }
+
+        role.setName(newName);
+        role.setDescription(newDescription);
+
+        if (!oldName.equals(newName)) {
+            rolesByName.put(newName, role);
+        }
+    }
+
     @Override
     public Optional<Role> findById(String id) {
         return Optional.ofNullable(rolesById.get(id));
