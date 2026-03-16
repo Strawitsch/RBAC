@@ -166,7 +166,6 @@ public class CommandRegistry {
             try {
                 sys.getRoleManager().add(role);
                 System.out.println("Role created successfully.");
-                // Предложить добавить права
                 addPermissionsToRoleInteractive(scanner, sys, role);
             } catch (DuplicateRoleException e) {
                 System.out.println("Error: " + e.getMessage());
@@ -611,7 +610,6 @@ public class CommandRegistry {
             boolean has = sys.getAssignmentManager().userHasPermission(user, permName, resource);
             if (has) {
                 System.out.println("User HAS this permission.");
-                // Найти из какой роли
                 List<RoleAssignment> assignments = sys.getAssignmentManager().findByUser(user).stream()
                         .filter(RoleAssignment::isActive)
                         .filter(a -> a.role().hasPermission(permName, resource))
