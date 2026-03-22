@@ -2,6 +2,7 @@ package rbac.commands;
 
 import rbac.core.*;
 import rbac.managers.*;
+import rbac.audit.AuditLog;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -10,6 +11,7 @@ public class RBACSystem {
     private final UserManager userManager;
     private final RoleManager roleManager;
     private final AssignmentManager assignmentManager;
+    private final AuditLog auditLog;
     private String currentUser;
 
     public RBACSystem() {
@@ -17,11 +19,13 @@ public class RBACSystem {
         this.roleManager = new RoleManager();
         this.assignmentManager = new AssignmentManager(userManager, roleManager);
         this.roleManager.setAssignmentManager(assignmentManager);
+        this.auditLog = new AuditLog();
     }
 
     public UserManager getUserManager() { return userManager; }
     public RoleManager getRoleManager() { return roleManager; }
     public AssignmentManager getAssignmentManager() { return assignmentManager; }
+    public AuditLog getAuditLog() { return auditLog; }
     public String getCurrentUser() { return currentUser; }
     public void setCurrentUser(String username) { this.currentUser = username; }
 
@@ -69,6 +73,7 @@ public class RBACSystem {
         assignmentManager.add(assignment);
 
         this.currentUser = admin.username();
+        auditLog.log("SYSTEM_INIT", "system", "system", "System initialized");
     }
 
     public String generateStatistics() {
