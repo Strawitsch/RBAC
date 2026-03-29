@@ -4,6 +4,8 @@ import rbac.core.*;
 import rbac.managers.*;
 import rbac.audit.AuditLog;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,13 @@ public class RBACSystem {
     public AuditLog getAuditLog() { return auditLog; }
     public String getCurrentUser() { return currentUser; }
     public void setCurrentUser(String username) { this.currentUser = username; }
+    private final ExecutorService backgroundExecutor = Executors.newCachedThreadPool();
+
+    public ExecutorService getBackgroundExecutor() { return backgroundExecutor; }
+
+    public void shutdown() {
+        backgroundExecutor.shutdown();
+    }
 
     public void initialize() {
         Permission readUsers = new Permission("READ", "users", "Can view user list");
