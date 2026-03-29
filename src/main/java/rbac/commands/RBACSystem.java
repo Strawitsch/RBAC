@@ -36,6 +36,7 @@ public class RBACSystem {
 
     public void shutdown() {
         backgroundExecutor.shutdown();
+        auditLog.shutdown();
     }
 
     public void initialize() {
