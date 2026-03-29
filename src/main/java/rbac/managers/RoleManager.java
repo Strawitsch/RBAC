@@ -124,6 +124,18 @@ public class RoleManager implements Repository<Role> {
         }
     }
 
+    public List<Role> findByFilterParallel(RoleFilter filter) {
+        Objects.requireNonNull(filter, "Filter cannot be null");
+        lock.readLock().lock();
+        try {
+            return rolesById.values().parallelStream()
+                    .filter(filter)
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
     public List<Role> findAll(RoleFilter filter, Comparator<Role> sorter) {
         Objects.requireNonNull(filter, "Filter cannot be null");
         Objects.requireNonNull(sorter, "Comparator cannot be null");

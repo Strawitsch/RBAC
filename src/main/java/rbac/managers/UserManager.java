@@ -87,6 +87,18 @@ public class UserManager implements Repository<User> {
         }
     }
 
+    public List<User> findByFilterParallel(UserFilter filter) {
+        Objects.requireNonNull(filter, "Filter cannot be null");
+        lock.readLock().lock();
+        try {
+            return users.values().parallelStream()
+                    .filter(filter)
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
     public List<User> findAll(UserFilter filter, Comparator<User> sorter) {
         Objects.requireNonNull(filter, "Filter cannot be null");
         Objects.requireNonNull(sorter, "Comparator cannot be null");
