@@ -4,9 +4,12 @@ import rbac.core.*;
 import rbac.managers.*;
 import rbac.audit.AuditLog;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class RBACSystem {
@@ -37,6 +40,33 @@ public class RBACSystem {
     public void shutdown() {
         backgroundExecutor.shutdown();
         auditLog.shutdown();
+    }
+
+    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+
+    public void startScheduledTasks() {
+        scheduledExecutor.scheduleAtFixedRate(() -> {
+            try {
+                expireTemporaryAssignments();
+                auditLog.log("SCHEDULED_STATS", "system", "system", generateStatistics());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, 10, 30, TimeUnit.SECONDS);
+    }
+
+    private void expireTemporaryAssignments() {
+        List<RoleAssignment> all = assignmentManager.findAll();
+        for (RoleAssignment a : all) {
+            if (a instanceof TemporaryAssignment temp && !temp.isActive()) {
+                continue;
+            }
+            if (a instanceof TemporaryAssignment temp && temp.isExpired()) {
+                assignmentManager.revokeAssignment(a.assignmentId());
+                auditLog.log("AUTO_EXPIRE", "system", a.user().username() + ":" + a.role().getName(),
+                        "Temporary assignment expired");
+            }
+        }
     }
 
     public void initialize() {
