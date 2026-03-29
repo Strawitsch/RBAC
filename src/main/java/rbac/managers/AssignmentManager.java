@@ -5,10 +5,13 @@ import rbac.exceptions.*;
 import rbac.filters.AssignmentFilter;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 public class AssignmentManager implements Repository<RoleAssignment> {
-    private final Map<String, RoleAssignment> assignments = new HashMap<>();
+    private final Map<String, RoleAssignment> assignments = new ConcurrentHashMap<>();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final UserManager userManager;
     private final RoleManager roleManager;
 
@@ -26,127 +29,208 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         if (!roleManager.exists(assignment.role().getName())) {
             throw new RoleNotFoundException("Role " + assignment.role().getName() + " not found in system");
         }
-        boolean alreadyAssigned = assignments.values().stream()
-                .anyMatch(a -> a.user().equals(assignment.user())
-                        && a.role().equals(assignment.role())
-                        && a.isActive());
-        if (alreadyAssigned) {
-            throw new DuplicateAssignmentException("User already has active assignment for role " + assignment.role().getName());
+        lock.writeLock().lock();
+        try {
+            boolean alreadyAssigned = assignments.values().stream()
+                    .anyMatch(a -> a.user().equals(assignment.user())
+                            && a.role().equals(assignment.role())
+                            && a.isActive());
+            if (alreadyAssigned) {
+                throw new DuplicateAssignmentException("User already has active assignment for role " + assignment.role().getName());
+            }
+            assignments.put(assignment.assignmentId(), assignment);
+        } finally {
+           lock.writeLock().unlock();
         }
-        assignments.put(assignment.assignmentId(), assignment);
     }
 
     @Override
     public boolean remove(RoleAssignment assignment) {
         Objects.requireNonNull(assignment, "Assignment cannot be null");
-        return assignments.remove(assignment.assignmentId(), assignment);
+        lock.writeLock().lock();
+        try {
+            return assignments.remove(assignment.assignmentId(), assignment);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
     public Optional<RoleAssignment> findById(String id) {
-        return Optional.ofNullable(assignments.get(id));
+        lock.readLock().lock();
+        try {
+            return Optional.ofNullable(assignments.get(id));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public List<RoleAssignment> findAll() {
-        return new ArrayList<>(assignments.values());
+        lock.readLock().lock();
+        try {
+            return new ArrayList<>(assignments.values());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<RoleAssignment> findByUser(User user) {
         Objects.requireNonNull(user, "User cannot be null");
-        return assignments.values().stream()
-                .filter(a -> a.user().equals(user))
-                .collect(Collectors.toList());
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .filter(a -> a.user().equals(user))
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
+
     }
 
     public List<RoleAssignment> findByRole(Role role) {
         Objects.requireNonNull(role, "Role cannot be null");
-        return assignments.values().stream()
-                .filter(a -> a.role().equals(role))
-                .collect(Collectors.toList());
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .filter(a -> a.role().equals(role))
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<RoleAssignment> findByFilter(AssignmentFilter filter) {
         Objects.requireNonNull(filter, "Filter cannot be null");
-        return assignments.values().stream()
-                .filter(filter)
-                .collect(Collectors.toList());
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .filter(filter)
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<RoleAssignment> findAll(AssignmentFilter filter, Comparator<RoleAssignment> sorter) {
         Objects.requireNonNull(filter, "Filter cannot be null");
         Objects.requireNonNull(sorter, "Comparator cannot be null");
-        return assignments.values().stream()
-                .filter(filter)
-                .sorted(sorter)
-                .collect(Collectors.toList());
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .filter(filter)
+                    .sorted(sorter)
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<RoleAssignment> getActiveAssignments() {
-        return assignments.values().stream()
-                .filter(RoleAssignment::isActive)
-                .collect(Collectors.toList());
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .filter(RoleAssignment::isActive)
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<RoleAssignment> getExpiredAssignments() {
-        return assignments.values().stream()
-                .filter(a -> !a.isActive())
-                .collect(Collectors.toList());
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .filter(a -> !a.isActive())
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public boolean userHasRole(User user, Role role) {
         Objects.requireNonNull(user, "User cannot be null");
         Objects.requireNonNull(role, "Role cannot be null");
-        return assignments.values().stream()
-                .anyMatch(a -> a.user().equals(user) && a.role().equals(role) && a.isActive());
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .anyMatch(a -> a.user().equals(user) && a.role().equals(role) && a.isActive());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public boolean userHasPermission(User user, String permissionName, String resource) {
         Objects.requireNonNull(user, "User cannot be null");
-        return assignments.values().stream()
-                .filter(a -> a.user().equals(user) && a.isActive())
-                .map(RoleAssignment::role)
-                .anyMatch(role -> role.hasPermission(permissionName, resource));
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .filter(a -> a.user().equals(user) && a.isActive())
+                    .map(RoleAssignment::role)
+                    .anyMatch(role -> role.hasPermission(permissionName, resource));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public Set<Permission> getUserPermissions(User user) {
         Objects.requireNonNull(user, "User cannot be null");
-        return assignments.values().stream()
-                .filter(a -> a.user().equals(user) && a.isActive())
-                .flatMap(a -> a.role().getPermissions().stream())
-                .collect(Collectors.toSet());
+        lock.readLock().lock();
+        try {
+            return assignments.values().stream()
+                    .filter(a -> a.user().equals(user) && a.isActive())
+                    .flatMap(a -> a.role().getPermissions().stream())
+                    .collect(Collectors.toSet());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public void revokeAssignment(String assignmentId) {
-        RoleAssignment assignment = assignments.get(assignmentId);
-        if (assignment == null) {
-            throw new AssignmentNotFoundException("Assignment " + assignmentId + " not found");
-        }
-        if (assignment instanceof PermanentAssignment perm) {
-            perm.revoke();
-        } else if (assignment instanceof TemporaryAssignment) {
-            assignments.remove(assignmentId);
+        lock.writeLock().lock();
+        try {
+            RoleAssignment assignment = assignments.get(assignmentId);
+            if (assignment == null) {
+                throw new AssignmentNotFoundException("Assignment " + assignmentId + " not found");
+            }
+            if (assignment instanceof PermanentAssignment perm) {
+                perm.revoke();
+            } else if (assignment instanceof TemporaryAssignment) {
+                assignments.remove(assignmentId);
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     public void extendTemporaryAssignment(String assignmentId, String newExpirationDate) {
-        RoleAssignment assignment = assignments.get(assignmentId);
-        if (assignment == null) {
-            throw new AssignmentNotFoundException("Assignment " + assignmentId + " not found");
+        lock.writeLock().lock();
+        try {
+            RoleAssignment assignment = assignments.get(assignmentId);
+            if (assignment == null) {
+                throw new AssignmentNotFoundException("Assignment " + assignmentId + " not found");
+            }
+            if (!(assignment instanceof TemporaryAssignment temp)) {
+                throw new IllegalArgumentException("Assignment is not temporary");
+            }
+            temp.extend(newExpirationDate);
+        } finally {
+            lock.writeLock().unlock();
         }
-        if (!(assignment instanceof TemporaryAssignment temp)) {
-            throw new IllegalArgumentException("Assignment is not temporary");
-        }
-        temp.extend(newExpirationDate);
     }
 
     @Override
     public int count() {
-        return assignments.size();
+            return assignments.size();
     }
 
     @Override
     public void clear() {
-        assignments.clear();
+        lock.writeLock().lock();
+        try {
+            assignments.clear();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 }
