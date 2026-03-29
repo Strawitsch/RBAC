@@ -73,6 +73,49 @@ public class ReportGenerator {
         return sb.toString();
     }
 
+    public static String generateUserReportParallel(UserManager userManager, AssignmentManager assignmentManager) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(FormatUtils.formatHeader("User Report (parallel)"));
+
+        List<User> users = userManager.findAll();
+        List<String[]> rows = users.parallelStream()
+                .map(user -> {
+                    List<RoleAssignment> assignments = assignmentManager.findByUser(user);
+                    String roles = assignments.stream()
+                            .map(a -> a.role().getName() + (a.isActive() ? "" : " (inactive)"))
+                            .collect(Collectors.joining(", "));
+                    return new String[]{user.username(), user.fullName(), user.email(), roles};
+                })
+                .collect(Collectors.toList());
+
+        sb.append(FormatUtils.formatTable(
+                new String[]{"Username", "Full Name", "Email", "Roles"},
+                rows
+        ));
+        return sb.toString();
+    }
+
+    public static String generatePermissionMatrixParallel(UserManager userManager, AssignmentManager assignmentManager) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(FormatUtils.formatHeader("Permission Matrix (parallel)"));
+
+        List<User> users = userManager.findAll();
+        List<String[]> rows = users.parallelStream()
+                .map(user -> {
+                    Set<String> permNames = assignmentManager.getUserPermissions(user).stream()
+                            .map(p -> p.name() + ":" + p.resource())
+                            .collect(Collectors.toSet());
+                    return new String[]{user.username(), String.join(", ", permNames)};
+                })
+                .collect(Collectors.toList());
+
+        sb.append(FormatUtils.formatTable(
+                new String[]{"User", "Permissions"},
+                rows
+        ));
+        return sb.toString();
+    }
+
     public static void exportToFile(String report, String filename) throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
             writer.println(report);
