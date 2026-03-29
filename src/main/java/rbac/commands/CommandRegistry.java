@@ -7,6 +7,8 @@ import rbac.sorters.*;
 import rbac.utils.*;
 import rbac.reports.ReportGenerator;
 
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -154,6 +156,36 @@ public class CommandRegistry {
             } else {
                 printUserTable(results);
             }
+        });
+
+        parser.registerCommand("report-users-async", "Generate user report in background", (scanner, sys) -> {
+            sys.getBackgroundExecutor().submit(() -> {
+                String report = ReportGenerator.generateUserReport(sys.getUserManager(), sys.getAssignmentManager());
+                System.out.println("\n=== Async User Report ===\n" + report);
+            });
+            System.out.println("Report generation started in background.");
+        });
+
+        parser.registerCommand("save-async", "Save data to file in background", (scanner, sys) -> {
+            String filename = ConsoleUtils.promptString(scanner, "Enter filename", true);
+            if (filename == null) return;
+            sys.getBackgroundExecutor().submit(() -> {
+                try {
+                    // сериализация данных (упрощённо)
+                    try (PrintWriter w = new PrintWriter(new FileWriter(filename))) {
+                        w.println("Users:");
+                        sys.getUserManager().findAll().forEach(u -> w.println(u.format()));
+                        w.println("Roles:");
+                        sys.getRoleManager().findAll().forEach(r -> w.println(r.format()));
+                        w.println("Assignments:");
+                        sys.getAssignmentManager().findAll().forEach(a -> w.println(a.user()));
+                    }
+                    System.out.println("Data saved to " + filename);
+                } catch (Exception e) {
+                    System.err.println("Save error: " + e.getMessage());
+                }
+            });
+            System.out.println("Saving started in background.");
         });
 
         // ---------- ROLE COMMANDS ----------
